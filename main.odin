@@ -1,7 +1,7 @@
 package main
 
-import "day1"
+import "day2"
 
 main :: proc() {
-  day1.part2()
+  day2.part2()
 }
