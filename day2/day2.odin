@@ -29,23 +29,58 @@ check_parts :: proc(parts0, parts1: string, ascending: bool) -> bool {
 }
 
 @(private)
-check_line :: proc(parts: []string, skip := -1) -> (bool, int) {
-  num0, _ := strconv.parse_int(parts[0])
-  num1, _ := strconv.parse_int(parts[1])
+check_line :: proc(parts: []string, skip := false) -> bool {
+  if !skip {
+    num0, _ := strconv.parse_int(parts[0])
+    num1, _ := strconv.parse_int(parts[1])
 
-  ascending := num0 < num1
-  is_safe := check_parts(parts[0], parts[1], ascending)
-  if !is_safe {
-    return false, 1
-  }
-
-  for i in 2 ..< len(parts) {
-    is_safe = check_parts(parts[i - 1], parts[i], ascending)
+    ascending := num0 < num1
+    is_safe := check_parts(parts[0], parts[1], ascending)
     if !is_safe {
-      return false, i
+      return false
+    }
+
+    for i in 2 ..< len(parts) {
+      is_safe = check_parts(parts[i - 1], parts[i], ascending)
+      if !is_safe {
+        return false
+      }
+    }
+  } else {
+    num0, _ := strconv.parse_int(parts[0])
+    num1, _ := strconv.parse_int(parts[1])
+
+    ascending := num0 < num1
+    is_safe := check_parts(parts[0], parts[1], ascending)
+    if !is_safe {
+      return false
+    }
+
+    skipped := false
+    for i in 2 ..< len(parts) {
+      is_safe = check_parts(parts[i - 1], parts[i], ascending)
+      if !is_safe {
+        if skipped {
+          return false
+        }
+
+        if i - 2 == 0 {
+          num0, _ := strconv.parse_int(parts[i - 2])
+          num1, _ := strconv.parse_int(parts[i])
+          ascending = num0 < num1
+        }
+        is_safe = check_parts(parts[i - 2], parts[i], ascending)
+        if !is_safe {
+          if i == len(parts) - 1 {
+            return true
+          }
+          return false
+        }
+        skipped = true
+      }
     }
   }
-  return true, 0
+  return true
 }
 
 part1 :: proc() {
@@ -59,7 +94,7 @@ part1 :: proc() {
     fmt.fprintfln(os.stderr, "Line: %s", line)
 
     parts := strings.split(line, " ")
-    is_safe, _ := check_line(parts)
+    is_safe := check_line(parts)
 
     if is_safe {
       safe_count += 1
@@ -88,15 +123,15 @@ part2 :: proc() {
       append(&parts_dyn, part)
     }
 
-    is_safe, i := check_line(parts)
-    if !is_safe && i != -1 {
-      is_safe, _ = check_line(parts, i)
-    }
+    is_safe := check_line(parts)
 
     if is_safe {
       safe_count += 1
+      fmt.fprintln(os.stderr, "Safe line: ", line)
     } else {
       fmt.fprintln(os.stderr, "Unsafe line: ", line)
+
+      fmt.fprint(os.stdout, "Unsafe line: ", line)
     }
     fmt.fprintln(os.stderr)
   }
